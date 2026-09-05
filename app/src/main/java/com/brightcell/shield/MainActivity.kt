@@ -1,16 +1,35 @@
 package com.brightcell.shield
 
+import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -23,65 +42,77 @@ import java.io.File
 
 class MainActivity : ComponentActivity() {
 
-    private var selectedFile: File? = null
+    private var selectedFile by mutableStateOf<File?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val filePicker =
-            registerForActivityResult(
-                ActivityResultContracts.GetContent()
-            ) { uri ->
+        val filePicker = registerForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri: Uri? ->
 
-                if (uri != null) {
+            uri?.let {
 
-                    val inputStream =
-                        contentResolver.openInputStream(uri)
-
-                    if (inputStream != null) {
-
-                        val fileName =
-                            uri.lastPathSegment
-                                ?: "selected_file"
-
-                        val tempFile =
-                            File(
-                                cacheDir,
-                                fileName
-                            )
-
-                        inputStream.use { input ->
-                            tempFile.outputStream().use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-
-                        selectedFile = tempFile
-                    }
-                }
+                selectedFile = copyUriToCache(it)
             }
+        }
 
         setContent {
+
             BrightcellShieldApp(
+                context = this,
+                selectedFile = selectedFile,
                 onPickFile = {
                     filePicker.launch("*/*")
-                },
-                getSelectedFile = {
-                    selectedFile
                 }
             )
+        }
+    }
+
+    private fun copyUriToCache(
+        uri: Uri
+    ): File? {
+
+        return try {
+
+            val fileName =
+                "scan_" +
+                        System.currentTimeMillis() +
+                        "_" +
+                        (uri.lastPathSegment ?: "file")
+
+            val tempFile = File(
+                cacheDir,
+                fileName
+            )
+
+            contentResolver.openInputStream(uri)
+                ?.use { input ->
+
+                    tempFile.outputStream()
+                        .use { output ->
+
+                            input.copyTo(output)
+                        }
+                }
+
+            tempFile
+
+        } catch (exception: Exception) {
+
+            null
         }
     }
 }
 
 @Composable
 fun BrightcellShieldApp(
-    onPickFile: () -> Unit,
-    getSelectedFile: () -> File?
+    context: Context,
+    selectedFile: File?,
+    onPickFile: () -> Unit
 ) {
 
     val backgroundColor = Color(0xFF06100C)
-    val cardColor = Color(0xFF0D2117)
     val greenColor = Color(0xFF40EC82)
 
     var isScanningApps by remember {
@@ -123,7 +154,9 @@ fun BrightcellShieldApp(
                     .padding(16.dp)
             ) {
 
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(
+                    modifier = Modifier.height(16.dp)
+                )
 
                 Text(
                     text = "🛡 Brightcell Shield",
@@ -139,7 +172,9 @@ fun BrightcellShieldApp(
                     letterSpacing = 1.sp
                 )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(
+                    modifier = Modifier.height(20.dp)
+                )
 
                 SecurityStatusCard(
                     scannedCount = scannedCount,
@@ -148,7 +183,9 @@ fun BrightcellShieldApp(
                         isScanningApps || isScanningFile
                 )
 
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(
+                    modifier = Modifier.height(16.dp)
+                )
 
                 Button(
                     onClick = {
@@ -166,15 +203,24 @@ fun BrightcellShieldApp(
                                 withContext(Dispatchers.Default) {
 
                                     val scanner =
-                                        ScannerEngine(
-                                            this@BrightcellShieldApp
-                                        )
+                                        ScannerEngine(context)
 
-                                    emptyList<ThreatAnalysisResult>()
+                                    val analyzer =
+                                        ThreatAnalyzer()
+
+                                    scanner
+                                        .scanInstalledApps()
+                                        .map { app ->
+
+                                            analyzer
+                                                .analyzeApp(app)
+                                        }
                                 }
 
                             scanResults = results
-                            scannedCount = results.size
+
+                            scannedCount =
+                                results.size
 
                             threatCount =
                                 results.count {
@@ -186,17 +232,28 @@ fun BrightcellShieldApp(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(54.dp),
+                    enabled = !isScanningApps,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = greenColor,
                         contentColor = Color.Black
-                    )
+                    ),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
 
-                    Text("SCAN INSTALLED APPS")
+                    Text(
+                        text =
+                            if (isScanningApps)
+                                "SCANNING INSTALLED APPS..."
+                            else
+                                "SCAN INSTALLED APPS",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(
+                    modifier = Modifier.height(10.dp)
+                )
 
                 Button(
                     onClick = onPickFile,
@@ -204,22 +261,40 @@ fun BrightcellShieldApp(
                         .fillMaxWidth()
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF173524)
-                    )
+                        containerColor =
+                            Color(0xFF173524)
+                    ),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
 
-                    Text("SELECT FILE / APK")
+                    Text(
+                        "SELECT FILE / APK"
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                if (selectedFile != null) {
+
+                    Spacer(
+                        modifier = Modifier.height(8.dp)
+                    )
+
+                    Text(
+                        text =
+                            "Selected: ${selectedFile.name}",
+                        color = Color.LightGray,
+                        fontSize = 12.sp
+                    )
+                }
+
+                Spacer(
+                    modifier = Modifier.height(10.dp)
+                )
 
                 Button(
                     onClick = {
 
-                        val file = getSelectedFile()
-
                         if (
-                            file != null &&
+                            selectedFile != null &&
                             !isScanningFile
                         ) {
 
@@ -229,15 +304,18 @@ fun BrightcellShieldApp(
                             scope.launch {
 
                                 val result =
-                                    withContext(Dispatchers.Default) {
+                                    withContext(
+                                        Dispatchers.Default
+                                    ) {
 
-                                        FileScanner(
-                                            context =
-                                                LocalContext.current
-                                        ).scanFile(file)
+                                        FileScanner(context)
+                                            .scanFile(
+                                                selectedFile
+                                            )
                                     }
 
                                 fileResult = result
+
                                 isScanningFile = false
                             }
                         }
@@ -246,26 +324,37 @@ fun BrightcellShieldApp(
                         .fillMaxWidth()
                         .height(52.dp),
                     enabled =
-                        getSelectedFile() != null &&
+                        selectedFile != null &&
                                 !isScanningFile,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2A5C3C)
-                    )
+                        containerColor =
+                            Color(0xFF2A5C3C)
+                    ),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
 
                     Text(
-                        if (isScanningFile)
-                            "SCANNING FILE..."
-                        else
-                            "START FILE SCAN"
+                        text =
+                            if (isScanningFile)
+                                "SCANNING FILE..."
+                            else
+                                "START FILE SCAN"
                     )
                 }
 
-                Spacer(modifier = Modifier.height(15.dp))
+                Spacer(
+                    modifier = Modifier.height(16.dp)
+                )
 
                 if (fileResult != null) {
 
-                    FileResultCard(fileResult!!)
+                    FileResultCard(
+                        result = fileResult!!
+                    )
+
+                    Spacer(
+                        modifier = Modifier.height(12.dp)
+                    )
                 }
 
                 if (scanResults.isNotEmpty()) {
@@ -273,10 +362,13 @@ fun BrightcellShieldApp(
                     Text(
                         text = "INSTALLED APP RESULTS",
                         color = greenColor,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(
+                        modifier = Modifier.height(8.dp)
+                    )
 
                     LazyColumn(
                         verticalArrangement =
@@ -285,7 +377,9 @@ fun BrightcellShieldApp(
 
                         items(scanResults) { result ->
 
-                            ScanResultCard(result)
+                            ScanResultCard(
+                                result
+                            )
                         }
                     }
                 }
@@ -323,7 +417,9 @@ fun SecurityStatusCard(
                 fontSize = 11.sp
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
             Text(
                 text =
@@ -336,7 +432,9 @@ fun SecurityStatusCard(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
             Text(
                 text = "Apps scanned: $scannedCount",
@@ -344,7 +442,8 @@ fun SecurityStatusCard(
             )
 
             Text(
-                text = "Suspicious apps: $threatCount",
+                text =
+                    "Suspicious apps: $threatCount",
                 color =
                     if (threatCount > 0)
                         Color.Red
@@ -388,7 +487,9 @@ fun FileResultCard(
                 fontWeight = FontWeight.Bold
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
             Text(
                 text = result.fileName,
@@ -402,13 +503,16 @@ fun FileResultCard(
             )
 
             Text(
-                text = "Risk Score: ${result.riskScore}/100",
+                text =
+                    "Risk Score: ${result.riskScore}/100",
                 color = riskColor
             )
 
-            if (result.sha256 != null) {
+            result.sha256?.let {
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
 
                 Text(
                     text = "SHA-256:",
@@ -417,19 +521,76 @@ fun FileResultCard(
                 )
 
                 Text(
-                    text = result.sha256.take(32) + "...",
+                    text =
+                        it.take(40) + "...",
                     color = Color.LightGray,
                     fontSize = 10.sp
                 )
             }
 
-            if (result.errorMessage != null) {
+            result.errorMessage?.let {
+
+                Spacer(
+                    modifier = Modifier.height(6.dp)
+                )
 
                 Text(
-                    text = result.errorMessage,
+                    text = it,
                     color = Color.Red
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun ScanResultCard(
+    result: ThreatAnalysisResult
+) {
+
+    val riskColor =
+        when (result.riskLevel) {
+
+            "HIGH" -> Color.Red
+            "MEDIUM" -> Color.Yellow
+            "LOW" -> Color(0xFFFFA500)
+            else -> Color(0xFF40EC82)
+        }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF0D2117)
+        ),
+        shape = RoundedCornerShape(14.dp)
+    ) {
+
+        Column(
+            modifier = Modifier.padding(14.dp)
+        ) {
+
+            Text(
+                text = result.appName,
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = result.packageName,
+                color = Color.Gray,
+                fontSize = 10.sp
+            )
+
+            Spacer(
+                modifier = Modifier.height(6.dp)
+            )
+
+            Text(
+                text =
+                    "${result.verdict} • Risk ${result.riskScore}/100",
+                color = riskColor,
+                fontSize = 12.sp
+            )
         }
     }
 }
