@@ -70,40 +70,61 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun copyUriToCache(
-        uri: Uri
-    ): File? {
+    private fun copyUriToCache(
+    uri: Uri
+): File? {
 
-        return try {
+    return try {
 
-            val fileName =
-                "scan_" +
-                        System.currentTimeMillis() +
-                        "_" +
-                        (uri.lastPathSegment ?: "file")
+        val originalName =
+            uri.lastPathSegment
+                ?.substringAfterLast("/")
+                ?.substringAfterLast(":")
+                ?: "selected_file"
 
-            val tempFile = File(
-                cacheDir,
-                fileName
+        val safeFileName =
+            originalName.replace(
+                Regex("[^a-zA-Z0-9._-]"),
+                "_"
             )
 
-            contentResolver.openInputStream(uri)
-                ?.use { input ->
+        val fileName =
+            "scan_" +
+                    System.currentTimeMillis() +
+                    "_" +
+                    safeFileName
 
-                    tempFile.outputStream()
-                        .use { output ->
+        val tempFile = File(
+            cacheDir,
+            fileName
+        )
 
-                            input.copyTo(output)
-                        }
-                }
+        contentResolver.openInputStream(uri)
+            ?.use { input ->
+
+                tempFile.outputStream()
+                    .use { output ->
+
+                        input.copyTo(output)
+                    }
+            }
+
+        if (tempFile.exists() && tempFile.length() > 0) {
 
             tempFile
 
-        } catch (exception: Exception) {
+        } else {
+
+            tempFile.delete()
 
             null
         }
+
+    } catch (_: Exception) {
+
+        null
     }
-}
+    }
 
 @Composable
 fun BrightcellShieldApp(
