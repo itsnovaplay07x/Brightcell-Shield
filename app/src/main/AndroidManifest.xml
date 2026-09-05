@@ -2,11 +2,16 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Installed apps ki information ke liye -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <!-- Package visibility for installed app security scanning -->
+    <queries>
 
-    <!-- Notifications ke liye -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+
+    </queries>
 
     <application
         android:allowBackup="true"
