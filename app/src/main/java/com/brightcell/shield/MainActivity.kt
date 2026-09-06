@@ -27,18 +27,6 @@ class MainActivity : ComponentActivity() {
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = WebChromeClient()
 
-        webView.loadUrl(
-            "file:///android_asset/index.html"
-        )
-    }
-
-    override fun onBackPressed() {
-
-        val webView =
-            findViewById<WebView>(
-                android.R.id.content
-            )
-
-        super.onBackPressed()
+        webView.loadUrl("file:///android_asset/index.html")
     }
 }
