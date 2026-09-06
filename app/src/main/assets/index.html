@@ -1,0 +1,77 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<meta name="theme-color" content="#06100c"><title>Brightcell Shield V10</title>
+<link rel="manifest" href="manifest.json"><link rel="stylesheet" href="style.css">
+</head><body>
+<div class="app">
+<header><div class="brand"><div class="logo">⬡</div><div><h1>Brightcell <span>Shield</span></h1><p>COMPLETE ANTIVIRUS PLATFORM</p></div></div><span class="badge">V10.0</span></header>
+
+<main>
+<section id="home" class="page active">
+<div class="hero"><div class="shield"><span>🛡️</span><i></i><b id="heroScore">94</b></div><h2 id="heroTitle">System Protected</h2><p id="heroText">Brightcell Shield security platform is active.</p></div>
+<section class="scorecard"><div><span>OVERALL SECURITY SCORE</span><h2 id="score">94<small>/100</small></h2></div><div class="grade" id="grade">A</div><div class="scorebar"><i id="scoreFill"></i></div></section>
+<section class="stats"><div><b id="statScans">0</b><span>Scans</span></div><div><b id="statThreats">0</b><span>Threats</span></div><div><b id="statQuarantine">0</b><span>Quarantined</span></div><div><b id="statWeb">0</b><span>Web Checks</span></div></section>
+<section class="section"><div class="section-head"><h3>Protection Status</h3><span id="moduleStatus">8/8 ACTIVE</span></div><div id="moduleSummary"></div></section>
+<section class="section"><div class="section-head"><h3>Quick Actions</h3></div><div class="quick-grid">
+<button onclick="showPage('scanner')">🔍<b>Scan</b><small>File & APK</small></button>
+<button onclick="showPage('web')">🌐<b>Web Check</b><small>Phishing Risk</small></button>
+<button onclick="showPage('intel')">☁️<b>Cloud Intel</b><small>Threat Lookup</small></button>
+<button onclick="showPage('security')">⚙️<b>Security Center</b><small>Advanced</small></button>
+</div></section>
+<section class="section"><div class="section-head"><h3>Recent Activity</h3><button onclick="showPage('activity')">View All</button></div><div id="homeActivity"></div></section>
+</section>
+
+<section id="scanner" class="page">
+<div class="page-title"><button onclick="showPage('home')">←</button><div><h2>File & APK Scanner</h2><p>Threat Detection + AI Risk Analysis</p></div></div>
+<div class="section scanner-card"><div class="scan-icon">🔍</div><h3>Security Scanner</h3><p>Enter a file name, APK name, hash, or test indicator for analysis.</p><input id="scanInput" placeholder="Example: safe.apk, trojan.exe, ransomware.apk"><div class="action-row"><button class="primary" onclick="runScan()">RUN SCAN</button><button onclick="demoScan()">DEMO THREAT</button></div></div>
+<div id="scanProgress" class="section hidden"><div class="progress-head"><span id="scanLabel">Preparing scan...</span><b id="scanPct">0%</b></div><div class="bar"><i id="scanFill"></i></div><small id="scanDetail"></small></div>
+<div id="scanResult" class="section hidden"></div>
+</section>
+
+<section id="quarantine" class="page">
+<div class="page-title"><button onclick="showPage('home')">←</button><div><h2>Quarantine Center</h2><p>Isolated threat records</p></div></div>
+<section class="section"><div class="section-head"><h3>Quarantined Items</h3><button onclick="clearQuarantine()">Clear</button></div><div id="quarantineList"></div></section>
+</section>
+
+<section id="web" class="page">
+<div class="page-title"><button onclick="showPage('home')">←</button><div><h2>Web & Phishing Protection</h2><p>URL reputation and phishing analysis</p></div></div>
+<section class="section"><p class="muted">Enter a website or domain to perform a local demonstration risk analysis.</p><div class="lookup"><input id="urlInput" placeholder="example.com or https://site.com"><button class="primary" onclick="checkUrl()">CHECK</button></div></section>
+<div id="urlResult" class="section hidden"></div>
+<section class="section"><div class="section-head"><h3>Web Protection</h3><span>ACTIVE</span></div><div class="row"><div>🎣<div><b>Phishing Detection</b><small>Credential-risk indicators</small></div></div><strong>ON</strong></div><div class="row"><div>🔗<div><b>URL Reputation</b><small>Known suspicious patterns</small></div></div><strong>ON</strong></div></section>
+</section>
+
+<section id="intel" class="page">
+<div class="page-title"><button onclick="showPage('home')">←</button><div><h2>Cloud Threat Intelligence</h2><p>Threat reputation architecture</p></div></div>
+<section class="section"><div class="intel-head"><span class="cloud-dot"></span><div><b>INTELLIGENCE NETWORK READY</b><small>Local cache + cloud integration architecture</small></div><button onclick="syncIntel()">SYNC</button></div><div class="bar"><i id="intelFill" style="width:100%"></i></div><small id="intelText">Threat intelligence cache ready.</small></section>
+<section class="section"><div class="lookup"><input id="intelInput" placeholder="Threat, domain, hash, indicator"><button class="primary" onclick="lookupIntel()">LOOKUP</button></div><div id="intelResult" class="hidden resultbox"></div></section>
+<section class="section"><div class="section-head"><h3>Threat Feed</h3><button onclick="renderFeed()">Refresh</button></div><div id="feedList"></div></section>
+</section>
+
+<section id="security" class="page">
+<div class="page-title"><button onclick="showPage('home')">←</button><div><h2>Advanced Security Center</h2><p>Protection, privacy & analytics</p></div></div>
+<section class="section"><div class="score-mini"><div><span>SECURITY POSTURE</span><h2 id="secScore">94/100</h2></div><button class="primary" onclick="analyzeSecurity()">ANALYZE</button></div><div class="bar"><i id="secFill"></i></div></section>
+<section class="section"><div class="section-head"><h3>Protection Modules</h3><span id="enabledCount">8/8</span></div><div id="controls"></div></section>
+<section class="section"><div class="section-head"><h3>Privacy Center</h3><span id="privacyCount">3/3</span></div><div id="privacyControls"></div></section>
+<section class="section"><div class="section-head"><h3>Security Recommendations</h3><span id="issueCount">0 ISSUES</span></div><div id="recommendations"></div></section>
+<section class="section"><div class="section-head"><h3>Analytics</h3><span>LAST 7 CHECKS</span></div><div class="chart" id="chart"></div><div class="metrics"><div><small>Risk</small><b id="riskMetric">Low</b></div><div><small>Coverage</small><b id="coverageMetric">100%</b></div><div><small>Privacy</small><b id="privacyMetric">Strong</b></div></div></section>
+</section>
+
+<section id="activity" class="page">
+<div class="page-title"><button onclick="showPage('home')">←</button><div><h2>Security Activity</h2><p>Unified monitoring timeline</p></div></div>
+<section class="section"><div class="section-head"><h3>All Events</h3><button onclick="clearActivity()">Clear</button></div><div id="activityList"></div></section>
+</section>
+
+<section id="about" class="page">
+<div class="page-title"><button onclick="showPage('home')">←</button><div><h2>Brightcell Shield V10</h2><p>Complete Antivirus Platform</p></div></div>
+<section class="section about"><h3>Platform Features</h3><ul><li>Professional Antivirus Dashboard</li><li>File & APK Scanner</li><li>Threat Detection Engine</li><li>AI Risk Analysis</li><li>Quarantine System</li><li>Web & Phishing Protection</li><li>Real-Time Protection Architecture</li><li>Cloud Threat Intelligence</li><li>Advanced Security Center</li></ul></section>
+<section class="notice"><b>⚠ Important Production Scope</b><p>This browser/PWA build is a complete antivirus platform prototype. It cannot independently inspect all Android files, continuously scan other apps, intercept system-wide traffic, or remove malware. A production antivirus requires native Android code, approved APIs and permissions, a malware engine, signed intelligence feeds, secure backend services, privacy controls, and extensive testing.</p></section>
+</section>
+</main>
+
+<nav>
+<button class="active" data-page="home" onclick="showPage('home')">⌂<span>Home</span></button>
+<button data-page="scanner" onclick="showPage('scanner')">🔍<span>Scan</span></button>
+<button data-page="quarantine" onclick="showPage('quarantine')">🗃️<span>Vault</span></button>
+<button data-page="security" onclick="showPage('security')">🛡️<span>Security</span></button>
+<button data-page="about" onclick="showPage('about')">☰<span>More</span></button>
+</nav></div><div id="toast" class="toast"></div><script src="app.js"></script></body></html>
