@@ -69,59 +69,22 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun copyUriToCache(
-    private fun copyUriToCache(
-    uri: Uri
-): File? {
-
+    private fun copyUriToCache(uri: Uri): File? {
     return try {
+        val inputStream = contentResolver.openInputStream(uri)
+            ?: return null
 
-        val originalName =
-            uri.lastPathSegment
-                ?.substringAfterLast("/")
-                ?.substringAfterLast(":")
-                ?: "selected_file"
+        val fileName = "scan_${System.currentTimeMillis()}.apk"
+        val cachedFile = File(cacheDir, fileName)
 
-        val safeFileName =
-            originalName.replace(
-                Regex("[^a-zA-Z0-9._-]"),
-                "_"
-            )
-
-        val fileName =
-            "scan_" +
-                    System.currentTimeMillis() +
-                    "_" +
-                    safeFileName
-
-        val tempFile = File(
-            cacheDir,
-            fileName
-        )
-
-        contentResolver.openInputStream(uri)
-            ?.use { input ->
-
-                tempFile.outputStream()
-                    .use { output ->
-
-                        input.copyTo(output)
-                    }
+        inputStream.use { input ->
+            cachedFile.outputStream().use { output ->
+                input.copyTo(output)
             }
-
-        if (tempFile.exists() && tempFile.length() > 0) {
-
-            tempFile
-
-        } else {
-
-            tempFile.delete()
-
-            null
         }
 
-    } catch (_: Exception) {
-
+        cachedFile
+    } catch (e: Exception) {
         null
     }
     }
