@@ -52,7 +52,6 @@ class MainActivity : ComponentActivity() {
         ) { uri: Uri? ->
 
             uri?.let {
-
                 selectedFile = copyUriToCache(it)
             }
         }
@@ -70,24 +69,32 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun copyUriToCache(uri: Uri): File? {
-    return try {
-        val inputStream = contentResolver.openInputStream(uri)
-            ?: return null
+        return try {
 
-        val fileName = "scan_${System.currentTimeMillis()}.apk"
-        val cachedFile = File(cacheDir, fileName)
+            val inputStream = contentResolver.openInputStream(uri)
+                ?: return null
 
-        inputStream.use { input ->
-            cachedFile.outputStream().use { output ->
-                input.copyTo(output)
+            val fileName =
+                "scan_${System.currentTimeMillis()}.apk"
+
+            val cachedFile = File(
+                cacheDir,
+                fileName
+            )
+
+            inputStream.use { input ->
+                cachedFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
             }
-        }
 
-        cachedFile
-    } catch (e: Exception) {
-        null
+            cachedFile
+
+        } catch (e: Exception) {
+            null
+        }
     }
-    }
+}
 
 @Composable
 fun BrightcellShieldApp(
@@ -108,7 +115,9 @@ fun BrightcellShieldApp(
     }
 
     var scanResults by remember {
-        mutableStateOf<List<ThreatAnalysisResult>>(emptyList())
+        mutableStateOf<List<ThreatAnalysisResult>>(
+            emptyList()
+        )
     }
 
     var fileResult by remember {
@@ -174,7 +183,9 @@ fun BrightcellShieldApp(
                 Button(
                     onClick = {
 
-                        if (isScanningApps) return@Button
+                        if (isScanningApps) {
+                            return@Button
+                        }
 
                         isScanningApps = true
                         scanResults = emptyList()
@@ -196,15 +207,12 @@ fun BrightcellShieldApp(
                                         .scanInstalledApps()
                                         .map { app ->
 
-                                            analyzer
-                                                .analyzeApp(app)
+                                            analyzer.analyzeApp(app)
                                         }
                                 }
 
                             scanResults = results
-
-                            scannedCount =
-                                results.size
+                            scannedCount = results.size
 
                             threatCount =
                                 results.count {
@@ -227,10 +235,11 @@ fun BrightcellShieldApp(
 
                     Text(
                         text =
-                            if (isScanningApps)
+                            if (isScanningApps) {
                                 "SCANNING INSTALLED APPS..."
-                            else
-                                "SCAN INSTALLED APPS",
+                            } else {
+                                "SCAN INSTALLED APPS"
+                            },
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -245,14 +254,13 @@ fun BrightcellShieldApp(
                         .fillMaxWidth()
                         .height(52.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor =
-                            Color(0xFF173524)
+                        containerColor = Color(0xFF173524)
                     ),
                     shape = RoundedCornerShape(14.dp)
                 ) {
 
                     Text(
-                        "SELECT FILE / APK"
+                        text = "SELECT FILE / APK"
                     )
                 }
 
@@ -263,8 +271,7 @@ fun BrightcellShieldApp(
                     )
 
                     Text(
-                        text =
-                            "Selected: ${selectedFile.name}",
+                        text = "Selected: ${selectedFile.name}",
                         color = Color.LightGray,
                         fontSize = 12.sp
                     )
@@ -277,8 +284,10 @@ fun BrightcellShieldApp(
                 Button(
                     onClick = {
 
+                        val fileToScan = selectedFile
+
                         if (
-                            selectedFile != null &&
+                            fileToScan != null &&
                             !isScanningFile
                         ) {
 
@@ -293,13 +302,10 @@ fun BrightcellShieldApp(
                                     ) {
 
                                         FileScanner(context)
-                                            .scanFile(
-                                                selectedFile
-                                            )
+                                            .scanFile(fileToScan)
                                     }
 
                                 fileResult = result
-
                                 isScanningFile = false
                             }
                         }
@@ -311,18 +317,18 @@ fun BrightcellShieldApp(
                         selectedFile != null &&
                                 !isScanningFile,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor =
-                            Color(0xFF2A5C3C)
+                        containerColor = Color(0xFF2A5C3C)
                     ),
                     shape = RoundedCornerShape(14.dp)
                 ) {
 
                     Text(
                         text =
-                            if (isScanningFile)
+                            if (isScanningFile) {
                                 "SCANNING FILE..."
-                            else
+                            } else {
                                 "START FILE SCAN"
+                            }
                     )
                 }
 
@@ -362,7 +368,7 @@ fun BrightcellShieldApp(
                         items(scanResults) { result ->
 
                             ScanResultCard(
-                                result
+                                result = result
                             )
                         }
                     }
@@ -393,10 +399,11 @@ fun SecurityStatusCard(
 
             Text(
                 text =
-                    if (isScanning)
+                    if (isScanning) {
                         "SECURITY SCAN IN PROGRESS"
-                    else
-                        "SYSTEM SECURITY STATUS",
+                    } else {
+                        "SYSTEM SECURITY STATUS"
+                    },
                 color = Color.Gray,
                 fontSize = 11.sp
             )
@@ -407,10 +414,11 @@ fun SecurityStatusCard(
 
             Text(
                 text =
-                    if (isScanning)
+                    if (isScanning) {
                         "Scanning..."
-                    else
-                        "Protection Ready",
+                    } else {
+                        "Protection Ready"
+                    },
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
@@ -426,13 +434,13 @@ fun SecurityStatusCard(
             )
 
             Text(
-                text =
-                    "Suspicious apps: $threatCount",
+                text = "Suspicious apps: $threatCount",
                 color =
-                    if (threatCount > 0)
+                    if (threatCount > 0) {
                         Color.Red
-                    else
+                    } else {
                         Color.LightGray
+                    }
             )
         }
     }
@@ -492,7 +500,7 @@ fun FileResultCard(
                 color = riskColor
             )
 
-            result.sha256?.let {
+            result.sha256?.let { hash ->
 
                 Spacer(
                     modifier = Modifier.height(8.dp)
@@ -505,21 +513,20 @@ fun FileResultCard(
                 )
 
                 Text(
-                    text =
-                        it.take(40) + "...",
+                    text = hash.take(40) + "...",
                     color = Color.LightGray,
                     fontSize = 10.sp
                 )
             }
 
-            result.errorMessage?.let {
+            result.errorMessage?.let { error ->
 
                 Spacer(
                     modifier = Modifier.height(6.dp)
                 )
 
                 Text(
-                    text = it,
+                    text = error,
                     color = Color.Red
                 )
             }
